@@ -6,3 +6,7 @@ package filters
 // Filter defines the common methods of the filters
 type Filter interface {
 }
+
+// Kalman defines the structure of the Kalman filter
+type Kalman struct {
+}
