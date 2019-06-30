@@ -4,4 +4,6 @@ package filters
 
 // Filter defines the common methods of the filters
 type Filter interface {
+	Filtering()
+	Smoothing()
 }
