@@ -10,3 +10,15 @@ type Kalman struct {
 	parB *mat.Dense
 	parH *mat.Dense
 }
+
+// Filtering does the Kalman filtering
+func (obj *Kalman) Filtering() error {
+
+	return nil
+}
+
+// Smoothing does the disturbance smoothing
+func (obj *Kalman) Smoothing() error {
+
+	return nil
+}
