@@ -1,6 +1,10 @@
 package kalman
 
-import "gonum.org/v1/gonum/mat"
+import (
+	"errors"
+
+	"gonum.org/v1/gonum/mat"
+)
 
 // Kalman defines the structure of the Kalman filter
 type Kalman struct {
@@ -33,7 +37,11 @@ func (obj *Kalman) Smoothing() error {
 /* Kalman methods */
 
 // SetObs sets the observations
-func (obj *Kalman) SetObs(data []float64, nvar int) {
+func (obj *Kalman) SetObs(data []float64, nvar int) error {
 	obj.iTT = len(data) / nvar
+	if obj.iTT*nvar != len(data) {
+		return errors.New("dimensions do not fit")
+	}
 	obj.obs = mat.NewDense(obj.iTT, nvar, data)
+	return nil
 }
