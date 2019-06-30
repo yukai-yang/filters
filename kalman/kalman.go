@@ -45,3 +45,13 @@ func (obj *Kalman) SetObs(data []float64, nvar int) error {
 	obj.obs = mat.NewDense(obj.iTT, nvar, data)
 	return nil
 }
+
+// SetFrame sets the begin and end of the time series
+func (obj *Kalman) SetFrame(begin, end int) error {
+	if begin < 0 || begin > end || end >= obj.iTT {
+		return errors.New("begin or end are wrong")
+	}
+	obj.begin = begin
+	obj.end = end
+	return nil
+}
