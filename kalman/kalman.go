@@ -5,12 +5,15 @@ import "gonum.org/v1/gonum/mat"
 // Kalman defines the structure of the Kalman filter
 type Kalman struct {
 	// contains filtered or unexported fields
-	obs  *mat.Dense
-	parF *mat.Dense
-	parB *mat.Dense
-	parH *mat.Dense
-	parQ *mat.Dense
-	parR *mat.Dense
+	obs   *mat.Dense
+	iTT   int
+	begin int
+	end   int
+	parF  *mat.Dense
+	parB  *mat.Dense
+	parH  *mat.Dense
+	parQ  *mat.Dense
+	parR  *mat.Dense
 }
 
 /* functions for the Filter interface */
@@ -30,6 +33,7 @@ func (obj *Kalman) Smoothing() error {
 /* Kalman methods */
 
 // SetObs sets the observations
-func (obj *Kalman) SetObs(obs []float64) {
-
+func (obj *Kalman) SetObs(data []float64, nvar int) {
+	obj.iTT = len(data) / nvar
+	obj.obs = mat.NewDense(obj.iTT, nvar, data)
 }
