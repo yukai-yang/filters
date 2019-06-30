@@ -9,6 +9,8 @@ type Kalman struct {
 	parF *mat.Dense
 	parB *mat.Dense
 	parH *mat.Dense
+	parQ *mat.Dense
+	parR *mat.Dense
 }
 
 /* functions for the Filter interface */
