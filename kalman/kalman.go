@@ -1,4 +1,3 @@
-// Package kalman provides implementations of the Kalman filtering algorithm
 package kalman
 
 import "gonum.org/v1/gonum/mat"
