@@ -1,7 +1,7 @@
 package kalman
 
 import (
-	"errors"
+	"github.com/yukai-yang/mults"
 
 	"gonum.org/v1/gonum/mat"
 )
@@ -9,15 +9,14 @@ import (
 // Kalman defines the structure of the Kalman filter
 type Kalman struct {
 	// contains filtered or unexported fields
-	obs   *mat.Dense
-	iTT   int
-	begin int
-	end   int
-	parF  *mat.Dense
-	parB  *mat.Dense
-	parH  *mat.Dense
-	parQ  *mat.Dense
-	parR  *mat.Dense
+	data *mults.MulTS
+	from int
+	to   int
+	parF *mat.Dense
+	parB *mat.Dense
+	parH *mat.Dense
+	parQ *mat.Dense
+	parR *mat.Dense
 }
 
 /* functions for the Filter interface */
@@ -36,22 +35,14 @@ func (obj *Kalman) Smoothing() error {
 
 /* Kalman methods */
 
-// SetObs sets the observations
-func (obj *Kalman) SetObs(data []float64, nvar int) error {
-	obj.iTT = len(data) / nvar
-	if obj.iTT*nvar != len(data) {
-		return errors.New("dimensions do not fit")
-	}
-	obj.obs = mat.NewDense(obj.iTT, nvar, data)
-	return nil
+// SetData sets the observations
+func (obj *Kalman) SetData(data *mults.MulTS) {
+	obj.data = data
 }
 
-// SetFrame sets the begin and end of the time series
-func (obj *Kalman) SetFrame(begin, end int) error {
-	if begin < 0 || begin > end || end >= obj.iTT {
-		return errors.New("begin or end are wrong")
-	}
-	obj.begin = begin
-	obj.end = end
+// SetFrame sets the from and to of the time series
+func (obj *Kalman) SetFrame(from, to int) error {
+	obj.from = from
+	obj.to = to
 	return nil
 }
