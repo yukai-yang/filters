@@ -1,6 +1,8 @@
 package kalman
 
 import (
+	"errors"
+
 	"github.com/yukai-yang/mults"
 	"gonum.org/v1/gonum/mat"
 )
@@ -41,6 +43,10 @@ func (obj *Kalman) SetData(data *mults.MulTS) {
 
 // SetFrame sets the from and to of the time series
 func (obj *Kalman) SetFrame(from, to int) error {
+	var mfrom, mto = obj.data.PossibleFrame()
+	if from < mfrom || from >= to || to > mto {
+		return errors.New("invalid from or to")
+	}
 	obj.from = from
 	obj.to = to
 	return nil
