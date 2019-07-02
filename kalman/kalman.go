@@ -89,10 +89,18 @@ func (obj *Kalman) Init() error {
 
 	if obj.parQ == nil {
 		obj.parQ = mat.NewDiagDense(obj.nlatent, repeat(1, obj.nlatent))
+	} else {
+		if tmp1, _ := obj.parQ.Dims(); tmp1 != obj.nlatent {
+			return errors.New("invalid Q dimension")
+		}
 	}
 
 	if obj.parR == nil {
 		obj.parR = mat.NewDiagDense(obj.nvar, repeat(1, obj.nvar))
+	} else {
+		if tmp1, _ := obj.parR.Dims(); tmp1 != obj.nvar {
+			return errors.New("invalid R dimension")
+		}
 	}
 
 	return nil
