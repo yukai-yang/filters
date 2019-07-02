@@ -113,12 +113,24 @@ func (obj *Kalman) SetFrame(from, to int) error {
 func (obj *Kalman) SetPar(name string, par []float64, dim0, dim1 int) error {
 	switch name {
 	case "F":
+		if dim0 != dim1 || dim0 < 1 || dim1 < 1 || dim0*dim1 != len(par) {
+			return errors.New("invalid parameter matrix dimensions")
+		}
 		obj.parF = mat.NewDense(dim1, dim0, par).T()
 	case "B":
+		if dim0 < 1 || dim1 < 1 || dim0*dim1 != len(par) {
+			return errors.New("invalid parameter matrix dimensions")
+		}
 		obj.parB = mat.NewDense(dim1, dim0, par).T()
 	case "H":
+		if dim0 < 1 || dim1 < 1 || dim0*dim1 != len(par) {
+			return errors.New("invalid parameter matrix dimensions")
+		}
 		obj.parH = mat.NewDense(dim1, dim0, par).T()
 	case "A":
+		if dim0 < 1 || dim1 < 1 || dim0*dim1 != len(par) {
+			return errors.New("invalid parameter matrix dimensions")
+		}
 		obj.parA = mat.NewDense(dim1, dim0, par).T()
 	default:
 		return errors.New("invalid parameter matrix name")
