@@ -24,6 +24,32 @@ type Kalman struct {
 
 // Init does the initialization if any
 func (obj *Kalman) Init() error {
+	if obj.data == nil {
+		return errors.New("no data")
+	}
+
+	if obj.from == 0 && obj.to == 0 {
+		obj.from, obj.to = obj.data.PossibleFrame()
+	}
+
+	if obj.parF == nil {
+		return errors.New("matrix F missing")
+	}
+
+	if obj.parB == nil {
+		return errors.New("matrix B missing")
+	}
+
+	if obj.parH == nil {
+		return errors.New("matrix H missing")
+	}
+
+	var nlatent, _ = obj.parF.Dims()
+
+	if obj.parQ == nil {
+		obj.parQ = mat.NewDiagDense(nlatent, filters.rep(1, nlatent))
+	}
+
 	return nil
 }
 
