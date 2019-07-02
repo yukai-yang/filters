@@ -108,3 +108,20 @@ func (obj *Kalman) SetFrame(from, to int) error {
 	obj.to = to
 	return nil
 }
+
+// SetPar sets the parameter matrices
+func (obj *Kalman) SetPar(name string, par []float64, dim0, dim1 int) error {
+	switch name {
+	case "F":
+		obj.parF = mat.NewDense(dim1, dim0, par).T()
+	case "B":
+		obj.parB = mat.NewDense(dim1, dim0, par).T()
+	case "H":
+		obj.parH = mat.NewDense(dim1, dim0, par).T()
+	case "A":
+		obj.parA = mat.NewDense(dim1, dim0, par).T()
+	default:
+		return errors.New("invalid parameter matrix name")
+	}
+	return nil
+}
