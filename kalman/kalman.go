@@ -17,6 +17,7 @@ type Kalman struct {
 	nlatent int          // Init
 	nvar    int          // Init
 	nsample int          // Init
+	nindep  int          // Init
 	parF    mat.Matrix
 	parB    mat.Matrix
 	parH    mat.Matrix
@@ -30,7 +31,8 @@ type Kalman struct {
 
 /* functions for the Filter interface */
 
-// Init does the initialization if any
+// Init does the initialization
+// basically it checks the parameters of the model
 func (obj *Kalman) Init() error {
 	if obj.data == nil {
 		return errors.New("no data")
@@ -58,14 +60,31 @@ func (obj *Kalman) Init() error {
 
 	obj.nlatent, _ = obj.parF.Dims()
 
+	if tmp1, _ := obj.parF.Dims(); tmp1 != obj.nlatent {
+		return errors.New("invalid F dimension")
+	}
+
 	var err error
 	if obj.mz, err = obj.data.DepVars(obj.from, obj.to); err != nil {
-		return errors.New("no dependent variable")
+		return err
 	}
 	obj.nsample, obj.nvar = obj.mz.Dims()
 
+	if tmp1, tmp2 := obj.parH.Dims(); tmp1 != obj.nvar || tmp2 != obj.nlatent {
+		return errors.New("invalid H dimension")
+	}
+
 	if obj.mu, err = obj.data.IndepVars(obj.from, obj.to); err != nil {
-		return errors.New("no independent variable")
+		return err
+	}
+	_, obj.nindep = obj.mu.Dims()
+
+	if tmp1, tmp2 := obj.parA.Dims(); tmp1 != obj.nvar || tmp2 != obj.nindep {
+		return errors.New("invalid A dimension")
+	}
+
+	if tmp1, tmp2 := obj.parB.Dims(); tmp1 != obj.nlatent || tmp2 != obj.nindep {
+		return errors.New("invalid B dimension")
 	}
 
 	if obj.parQ == nil {
