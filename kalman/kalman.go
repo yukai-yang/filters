@@ -3,7 +3,6 @@ package kalman
 import (
 	"errors"
 
-	"github.com/yukai-yang/filters"
 	"github.com/yukai-yang/mults"
 	"gonum.org/v1/gonum/mat"
 )
@@ -18,15 +17,16 @@ type Kalman struct {
 	nvar    int          // Init
 	nsample int          // Init
 	nindep  int          // Init
-	parF    mat.Matrix
-	parB    mat.Matrix
-	parH    mat.Matrix
-	parA    mat.Matrix
-	parQ    mat.Matrix
-	parR    mat.Matrix
-	mz      mat.Matrix
-	mu      mat.Matrix
-	mx      mat.Matrix
+	parF    mat.Matrix   // SetPar
+	parB    mat.Matrix   // SetPar
+	parH    mat.Matrix   // SetPar
+	parA    mat.Matrix   // SetPar
+	parQ    mat.Matrix   // SetPar, Init
+	parR    mat.Matrix   // SetPar, Init
+	mz      mat.Matrix   // Init
+	mu      mat.Matrix   // Init
+	mx      mat.Matrix   // Update
+	mxx     mat.Matrix   // Update
 }
 
 /* functions for the Filter interface */
@@ -88,11 +88,11 @@ func (obj *Kalman) Init() error {
 	}
 
 	if obj.parQ == nil {
-		obj.parQ = mat.NewDiagDense(obj.nlatent, filters.Repeat(1, obj.nlatent))
+		obj.parQ = mat.NewDiagDense(obj.nlatent, repeat(1, obj.nlatent))
 	}
 
 	if obj.parR == nil {
-		obj.parR = mat.NewDiagDense(obj.nvar, filters.Repeat(1, obj.nvar))
+		obj.parR = mat.NewDiagDense(obj.nvar, repeat(1, obj.nvar))
 	}
 
 	return nil
@@ -151,6 +151,18 @@ func (obj *Kalman) SetPar(name string, par []float64, dim0, dim1 int) error {
 			return errors.New("invalid parameter matrix dimensions")
 		}
 		obj.parA = mat.NewDense(dim1, dim0, par).T()
+	case "Q":
+		// only dim0 will be used
+		if dim0 < 1 || dim0*dim0 != len(par) {
+			return errors.New("invalid parameter matrix dimensions")
+		}
+		obj.parQ = mat.NewSymDense(dim0, transposefloats(par, dim0, dim0))
+	case "R":
+		// only dim0 will be used
+		if dim0 < 1 || dim0*dim0 != len(par) {
+			return errors.New("invalid parameter matrix dimensions")
+		}
+		obj.parR = mat.NewSymDense(dim0, transposefloats(par, dim0, dim0))
 	default:
 		return errors.New("invalid parameter matrix name")
 	}

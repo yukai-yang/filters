@@ -11,3 +11,21 @@ func NewKalman(data *mults.MulTS) *Kalman {
 	kal.data = data
 	return kal
 }
+
+func repeat(v float64, ntimes int) []float64 {
+	var ret = make([]float64, ntimes)
+	for i := 0; i < ntimes; i++ {
+		ret[i] = v
+	}
+	return ret
+}
+
+func transposefloats(vals []float64, dim0, dim1 int) []float64 {
+	var ret = make([]float64, len(vals))
+	for i := 0; i < dim0; i++ {
+		for j := 0; j < dim1; j++ {
+			ret[j+i*dim1] = vals[i+j*dim0]
+		}
+	}
+	return ret
+}
