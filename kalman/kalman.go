@@ -13,11 +13,11 @@ type Kalman struct {
 	data *mults.MulTS
 	from int
 	to   int
-	parF *mat.Dense
-	parB *mat.Dense
-	parH *mat.Dense
-	parQ *mat.Dense
-	parR *mat.Dense
+	parF mat.Matrix
+	parB mat.Matrix
+	parH mat.Matrix
+	parQ mat.Matrix
+	parR mat.Matrix
 }
 
 /* functions for the Filter interface */
