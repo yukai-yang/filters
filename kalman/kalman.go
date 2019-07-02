@@ -11,14 +11,20 @@ import (
 // Kalman defines the structure of the Kalman filter
 type Kalman struct {
 	// contains filtered or unexported fields
-	data *mults.MulTS // SetData
-	from int          // SetFrame
-	to   int          // SetFrame
-	parF mat.Matrix
-	parB mat.Matrix
-	parH mat.Matrix
-	parQ mat.Matrix
-	parR mat.Matrix
+	data    *mults.MulTS // SetData
+	from    int          // SetFrame
+	to      int          // SetFrame
+	nlatent int          // Init
+	nvar    int          // Init
+	nsample int          // Init
+	parF    mat.Matrix
+	parB    mat.Matrix
+	parH    mat.Matrix
+	parQ    mat.Matrix
+	parR    mat.Matrix
+	mz      mat.Matrix
+	mu      mat.Matrix
+	mx      mat.Matrix
 }
 
 /* functions for the Filter interface */
@@ -45,10 +51,24 @@ func (obj *Kalman) Init() error {
 		return errors.New("matrix H missing")
 	}
 
-	var nlatent, _ = obj.parF.Dims()
+	obj.nlatent, _ = obj.parF.Dims()
+
+	var err error
+	if obj.mz, err = obj.data.DepVars(obj.from, obj.to); err != nil {
+		return errors.New("no dependent variable")
+	}
+	obj.nsample, obj.nvar = obj.mz.Dims()
+
+	if obj.mu, err = obj.data.IndepVars(obj.from, obj.to); err != nil {
+		return errors.New("no independent variable")
+	}
 
 	if obj.parQ == nil {
-		obj.parQ = mat.NewDiagDense(nlatent, filters.Repeat(1, nlatent))
+		obj.parQ = mat.NewDiagDense(obj.nlatent, filters.Repeat(1, obj.nlatent))
+	}
+
+	if obj.parR == nil {
+		obj.parR = mat.NewDiagDense(obj.nvar, filters.Repeat(1, obj.nvar))
 	}
 
 	return nil
