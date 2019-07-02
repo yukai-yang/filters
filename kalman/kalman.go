@@ -3,6 +3,7 @@ package kalman
 import (
 	"errors"
 
+	"github.com/yukai-yang/filters"
 	"github.com/yukai-yang/mults"
 	"gonum.org/v1/gonum/mat"
 )
@@ -47,7 +48,7 @@ func (obj *Kalman) Init() error {
 	var nlatent, _ = obj.parF.Dims()
 
 	if obj.parQ == nil {
-		obj.parQ = mat.NewDiagDense(nlatent, filters.rep(1, nlatent))
+		obj.parQ = mat.NewDiagDense(nlatent, filters.Repeat(1, nlatent))
 	}
 
 	return nil
