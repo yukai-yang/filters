@@ -10,9 +10,9 @@ import (
 // Kalman defines the structure of the Kalman filter
 type Kalman struct {
 	// contains filtered or unexported fields
-	data *mults.MulTS
-	from int
-	to   int
+	data *mults.MulTS // SetData
+	from int          // SetFrame
+	to   int          // SetFrame
 	parF mat.Matrix
 	parB mat.Matrix
 	parH mat.Matrix
@@ -21,6 +21,11 @@ type Kalman struct {
 }
 
 /* functions for the Filter interface */
+
+// Init does the initialization if any
+func (obj *Kalman) Init() error {
+	return nil
+}
 
 // Filtering does the Kalman filtering
 func (obj *Kalman) Filtering() error {
