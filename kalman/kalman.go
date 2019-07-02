@@ -20,6 +20,7 @@ type Kalman struct {
 	parF    mat.Matrix
 	parB    mat.Matrix
 	parH    mat.Matrix
+	parA    mat.Matrix
 	parQ    mat.Matrix
 	parR    mat.Matrix
 	mz      mat.Matrix
@@ -49,6 +50,10 @@ func (obj *Kalman) Init() error {
 
 	if obj.parH == nil {
 		return errors.New("matrix H missing")
+	}
+
+	if obj.parA == nil {
+		return errors.New("matrix A missing")
 	}
 
 	obj.nlatent, _ = obj.parF.Dims()
