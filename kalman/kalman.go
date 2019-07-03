@@ -25,16 +25,16 @@ type Kalman struct {
 	parR    mat.Matrix   // SetPar, Init
 	mz      mat.Matrix   // obs, Init
 	mu      mat.Matrix   // exp obs, Init
-	mx      mat.Matrix   // pred latent, Update
-	mxx     mat.Matrix   // updt latent, Update
-	aP      []mat.Matrix // pred cov Q
-	aPP     []mat.Matrix // updt cov Q
-	mv      mat.Matrix   // pred noise obs (y)
-	mvv     mat.Matrix   // updt noise obs (y)
-	aS      []mat.Matrix
-	aK      []mat.Matrix
-	inix    mat.Vector
-	iniP    mat.Matrix
+	mx      *mat.Dense   // pred latent
+	mxx     *mat.Dense   // updt latent
+	aP      []*mat.Dense // pred cov Q
+	aPP     []*mat.Dense // updt cov Q
+	mv      *mat.Dense   // pred noise obs (y)
+	mvv     *mat.Dense   // updt noise obs (y)
+	aS      []*mat.Dense
+	aK      []*mat.Dense
+	inix    []float64
+	iniP    *mat.Dense
 }
 
 /* functions for the Filter interface */
@@ -111,11 +111,53 @@ func (obj *Kalman) Init() error {
 		}
 	}
 
+	if obj.inix == nil || len(obj.inix) != obj.nlatent {
+		return errors.New("invalid initial value for x")
+	}
+
+	if obj.iniP != nil {
+		tmp1, _ := obj.iniP.Dims()
+		if tmp1 != obj.nlatent {
+			return errors.New("invalid initial value for P")
+		}
+	} else {
+		return errors.New("invalid initial value for P")
+	}
+
+	// initialize the containers for the results
+	obj.mx = mat.NewDense(obj.nsample+1, obj.nlatent, nil)
+	obj.mxx = mat.NewDense(obj.nsample+1, obj.nlatent, nil)
+	obj.mxx.SetRow(0, obj.inix) // initial value
+
+	obj.aP = make([]*mat.Dense, obj.nsample+1)
+	obj.aPP = make([]*mat.Dense, obj.nsample+1)
+
+	obj.mv = mat.NewDense(obj.nsample+1, obj.nvar, nil)
+	obj.mvv = mat.NewDense(obj.nsample+1, obj.nvar, nil)
+
+	obj.aS = make([]*mat.Dense, obj.nsample+1)
+	obj.aK = make([]*mat.Dense, obj.nsample+1)
+
 	return nil
 }
 
 // Filtering does the Kalman filtering
 func (obj *Kalman) Filtering() error {
+	var tmp1 = mat.NewVecDense(obj.nlatent, nil)
+	var tmp2 = mat.NewVecDense(obj.nlatent, nil)
+	var tmp3 = mat.NewVecDense(obj.nlatent, nil)
+
+	for i := 1; i <= obj.nsample; i++ {
+		// predict
+		tmp1.MulVec(obj.parF, obj.mx.RowView(i-1))
+		tmp2.MulVec(obj.parB, obj.mu.(*mat.Dense).RowView(i-1))
+		tmp3.AddVec(tmp1, tmp2)
+		// question here
+		obj.mx.SetRow(i, mat.Row(nil, 0, tmp3))
+
+		// update
+
+	}
 
 	return nil
 }
