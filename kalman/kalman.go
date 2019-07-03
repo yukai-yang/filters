@@ -10,31 +10,31 @@ import (
 // Kalman defines the structure of the Kalman filter
 type Kalman struct {
 	// contains filtered or unexported fields
-	data    *mults.MulTS // SetData
-	from    int          // SetFrame
-	to      int          // SetFrame
-	nlatent int          // Init
-	nvar    int          // Init
-	nsample int          // Init
-	nindep  int          // Init
-	parF    mat.Matrix   // SetPar
-	parB    mat.Matrix   // SetPar
-	parH    mat.Matrix   // SetPar
-	parA    mat.Matrix   // SetPar
-	parQ    mat.Matrix   // SetPar, Init
-	parR    mat.Matrix   // SetPar, Init
-	mz      mat.Matrix   // obs, Init
-	mu      mat.Matrix   // exp obs, Init
-	mx      *mat.Dense   // pred latent
-	mxx     *mat.Dense   // updt latent
-	aP      []*mat.Dense // pred cov Q
-	aPP     []*mat.Dense // updt cov Q
-	mv      *mat.Dense   // pred noise obs (y)
-	mvv     *mat.Dense   // updt noise obs (y)
+	data    *mults.MulTS    // SetData
+	from    int             // SetFrame
+	to      int             // SetFrame
+	nlatent int             // Init
+	nvar    int             // Init
+	nsample int             // Init
+	nindep  int             // Init
+	parF    mat.Matrix      // SetPar
+	parB    mat.Matrix      // SetPar
+	parH    mat.Matrix      // SetPar
+	parA    mat.Matrix      // SetPar
+	parQ    mat.Matrix      // SetPar, Init
+	parR    mat.Matrix      // SetPar, Init
+	mz      mat.Matrix      // obs, Init
+	mu      mat.Matrix      // exp obs, Init
+	mx      *mat.Dense      // pred latent
+	mxx     *mat.Dense      // updt latent
+	aP      []*mat.SymDense // pred cov Q
+	aPP     []*mat.SymDense // updt cov Q
+	mv      *mat.Dense      // pred noise obs (y)
+	mvv     *mat.Dense      // updt noise obs (y)
 	aS      []*mat.Dense
 	aK      []*mat.Dense
 	inix    []float64
-	iniP    *mat.Dense
+	iniP    []float64
 }
 
 /* functions for the Filter interface */
@@ -116,8 +116,7 @@ func (obj *Kalman) Init() error {
 	}
 
 	if obj.iniP != nil {
-		tmp1, _ := obj.iniP.Dims()
-		if tmp1 != obj.nlatent {
+		if len(obj.iniP) != obj.nlatent*obj.nlatent {
 			return errors.New("invalid initial value for P")
 		}
 	} else {
@@ -129,8 +128,9 @@ func (obj *Kalman) Init() error {
 	obj.mxx = mat.NewDense(obj.nsample+1, obj.nlatent, nil)
 	obj.mxx.SetRow(0, obj.inix) // initial value
 
-	obj.aP = make([]*mat.Dense, obj.nsample+1)
-	obj.aPP = make([]*mat.Dense, obj.nsample+1)
+	obj.aP = make([]*mat.SymDense, obj.nsample+1)
+	obj.aP[0] = mat.NewSymDense(obj.nlatent, obj.iniP)
+	obj.aPP = make([]*mat.SymDense, obj.nsample+1)
 
 	obj.mv = mat.NewDense(obj.nsample+1, obj.nvar, nil)
 	obj.mvv = mat.NewDense(obj.nsample+1, obj.nvar, nil)
@@ -143,17 +143,19 @@ func (obj *Kalman) Init() error {
 
 // Filtering does the Kalman filtering
 func (obj *Kalman) Filtering() error {
-	var tmp1 = mat.NewVecDense(obj.nlatent, nil)
-	var tmp2 = mat.NewVecDense(obj.nlatent, nil)
-	var tmp3 = mat.NewVecDense(obj.nlatent, nil)
+	var v1 = mat.NewVecDense(obj.nlatent, nil)
+	var v2 = mat.NewVecDense(obj.nlatent, nil)
+	var v3 = mat.NewVecDense(obj.nlatent, nil)
 
 	for i := 1; i <= obj.nsample; i++ {
 		// predict
-		tmp1.MulVec(obj.parF, obj.mx.RowView(i-1))
-		tmp2.MulVec(obj.parB, obj.mu.(*mat.Dense).RowView(i-1))
-		tmp3.AddVec(tmp1, tmp2)
+		v1.MulVec(obj.parF, obj.mx.RowView(i-1))
+		v2.MulVec(obj.parB, obj.mu.(*mat.Dense).RowView(i-1))
+		v3.AddVec(v1, v2)
 		// question here
-		obj.mx.SetRow(i, mat.Row(nil, 0, tmp3))
+		obj.mx.SetRow(i, mat.Row(nil, 0, v3))
+
+		obj.aP[i] = mat.NewSymDense(obj.nlatent, nil)
 
 		// update
 
