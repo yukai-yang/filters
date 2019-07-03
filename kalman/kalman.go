@@ -33,6 +33,8 @@ type Kalman struct {
 	mvv     mat.Matrix   // updt noise obs (y)
 	aS      []mat.Matrix
 	aK      []mat.Matrix
+	inix    mat.Matrix
+	iniP    mat.Matrix
 }
 
 /* functions for the Filter interface */
