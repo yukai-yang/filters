@@ -32,6 +32,7 @@ type Kalman struct {
 	mv      *mat.Dense      // pred noise obs (y)
 	mvv     *mat.Dense      // updt noise obs (y)
 	aS      []*mat.SymDense
+	aiS     []*mat.SymDense
 	aK      []*mat.Dense
 	inix    []float64
 	iniP    []float64
@@ -136,6 +137,7 @@ func (obj *Kalman) Init() error {
 	obj.mvv = mat.NewDense(obj.nsample+1, obj.nvar, nil)
 
 	obj.aS = make([]*mat.SymDense, obj.nsample+1)
+	obj.aiS = make([]*mat.SymDense, obj.nsample+1)
 	obj.aK = make([]*mat.Dense, obj.nsample+1)
 
 	return nil
@@ -145,7 +147,10 @@ func (obj *Kalman) Init() error {
 func (obj *Kalman) Filtering() error {
 	var v1 = &mat.VecDense{}
 	var v2 = &mat.VecDense{}
-	var v3 = &mat.VecDense{}
+	var vx = mat.NewVecDense(obj.nlatent, nil)
+
+	var c = &mat.Cholesky{}
+	var ok bool
 
 	var mz = mat.DenseCopyOf(obj.mz)
 	var mu = mat.DenseCopyOf(obj.mu)
@@ -155,25 +160,45 @@ func (obj *Kalman) Filtering() error {
 
 	for i := 1; i <= obj.nsample; i++ {
 		// predict
-		v1.Reset()
 		v1.MulVec(obj.parF, obj.mx.RowView(i-1))
-		v2.Reset()
 		v2.MulVec(obj.parB, mu.RowView(i-1))
-		v3.AddVec(v1, v2)
-		obj.mx.SetRow(i, mat.Col(nil, 0, v3))
+		vx.AddVec(v1, v2) // x
+		obj.mx.SetRow(i, mat.Col(nil, 0, vx))
 
 		obj.aP[i] = mat.NewSymDense(obj.nlatent, nil)
-		obj.aP[i].AddSym(symCrossProd(obj.aPP[i-1], obj.parF.T()), mQ)
+		obj.aP[i].AddSym(symCrossProd(obj.aPP[i-1], obj.parF.T(), 1), mQ)
 
 		// update
-		v1.Reset()
-		v1.MulVec(obj.parH, v3)
-		v2.Reset()
-		v2.SubVec(mz.RowView(i-1), v1)
+		v1.MulVec(obj.parH, vx)
+		v2.SubVec(mz.RowView(i-1), v1) // y
 		obj.mv.SetRow(i, mat.Col(nil, 0, v2))
 
 		obj.aS[i] = mat.NewSymDense(obj.nvar, nil)
-		obj.aS[i].AddSym(symCrossProd(obj.aP[i], obj.parH.T()), mR)
+		obj.aS[i].AddSym(symCrossProd(obj.aP[i], obj.parH.T(), 1), mR)
+
+		obj.aiS[i] = mat.NewSymDense(obj.nvar, nil)
+		c.Reset()
+		if ok = c.Factorize(obj.aS[i]); !ok {
+			return errors.New("matrix is not positive semi-definite")
+		}
+		if err := c.InverseTo(obj.aiS[i]); err != nil {
+			return err
+		}
+
+		// Kalman gain
+		obj.aK[i] = mat.NewDense(obj.nlatent, obj.nvar, nil)
+		obj.aK[i].Product(obj.aP[i], obj.parH.T(), obj.aiS[i])
+
+		v1.MulVec(obj.aK[i], v2)
+		vx.AddVec(vx, v2) // update x
+		obj.mxx.SetRow(i, mat.Col(nil, 0, vx))
+
+		obj.aPP[i] = mat.NewSymDense(obj.nlatent, nil)
+		obj.aPP[i].AddSym(symCrossProd(symCrossProd(obj.aiS[i], obj.parH, 1), obj.aP[i], -1), obj.aP[i])
+
+		v1.MulVec(obj.parH, vx)
+		v2.SubVec(mz.RowView(i-1), v1) // y
+		obj.mvv.SetRow(i, mat.Col(nil, 0, v2))
 
 	}
 

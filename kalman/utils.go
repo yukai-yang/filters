@@ -34,8 +34,8 @@ func transposefloats(vals []float64, dim0, dim1 int) []float64 {
 }
 
 // SymCrossProd performs a product between x', a and x,
-//  s = x' * a * x
-func symCrossProd(a mat.Symmetric, x mat.Matrix) *mat.SymDense {
+//  s = x' * a * x * b
+func symCrossProd(a mat.Symmetric, x mat.Matrix, b float64) *mat.SymDense {
 	if x == nil {
 		panic(mat.ErrZeroLength)
 	}
@@ -54,7 +54,7 @@ func symCrossProd(a mat.Symmetric, x mat.Matrix) *mat.SymDense {
 
 	for i := 0; i < n; i++ {
 		for j := 0; j < n; j++ {
-			s.RankTwo(s, a.At(i, j), xx.RowView(i), xx.RowView(j))
+			s.RankTwo(s, b*a.At(i, j), xx.RowView(i), xx.RowView(j))
 
 		}
 	}
