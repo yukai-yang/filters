@@ -23,10 +23,16 @@ type Kalman struct {
 	parA    mat.Matrix   // SetPar
 	parQ    mat.Matrix   // SetPar, Init
 	parR    mat.Matrix   // SetPar, Init
-	mz      mat.Matrix   // Init
-	mu      mat.Matrix   // Init
-	mx      mat.Matrix   // Update
-	mxx     mat.Matrix   // Update
+	mz      mat.Matrix   // obs, Init
+	mu      mat.Matrix   // exp obs, Init
+	mx      mat.Matrix   // pred latent, Update
+	mxx     mat.Matrix   // updt latent, Update
+	aP      []mat.Matrix // pred cov Q
+	aPP     []mat.Matrix // updt cov Q
+	mv      mat.Matrix   // pred noise obs (y)
+	mvv     mat.Matrix   // updt noise obs (y)
+	aS      []mat.Matrix
+	aK      []mat.Matrix
 }
 
 /* functions for the Filter interface */
