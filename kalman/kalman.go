@@ -129,8 +129,8 @@ func (obj *Kalman) Init() error {
 	obj.mxx.SetRow(0, obj.inix) // initial value
 
 	obj.aP = make([]*mat.SymDense, obj.nsample+1)
-	obj.aP[0] = mat.NewSymDense(obj.nlatent, obj.iniP)
 	obj.aPP = make([]*mat.SymDense, obj.nsample+1)
+	obj.aPP[0] = mat.NewSymDense(obj.nlatent, obj.iniP) // initial value
 
 	obj.mv = mat.NewDense(obj.nsample+1, obj.nvar, nil)
 	obj.mvv = mat.NewDense(obj.nsample+1, obj.nvar, nil)
@@ -147,15 +147,19 @@ func (obj *Kalman) Filtering() error {
 	var v2 = mat.NewVecDense(obj.nlatent, nil)
 	var v3 = mat.NewVecDense(obj.nlatent, nil)
 
+	var mu = mat.DenseCopyOf(obj.mu)
+	var mQ = obj.parQ.(*mat.SymDense)
+
 	for i := 1; i <= obj.nsample; i++ {
 		// predict
 		v1.MulVec(obj.parF, obj.mx.RowView(i-1))
-		v2.MulVec(obj.parB, obj.mu.(*mat.Dense).RowView(i-1))
+		v2.MulVec(obj.parB, mu.RowView(i-1))
 		v3.AddVec(v1, v2)
 		// question here
-		obj.mx.SetRow(i, mat.Row(nil, 0, v3))
+		obj.mx.SetRow(i, mat.Col(nil, 0, v3))
 
 		obj.aP[i] = mat.NewSymDense(obj.nlatent, nil)
+		obj.aP[i].AddSym(symCrossProd(obj.aPP[i-1], obj.parF.T()), mQ)
 
 		// update
 

@@ -1,6 +1,9 @@
 package kalman
 
-import "github.com/yukai-yang/mults"
+import (
+	"github.com/yukai-yang/mults"
+	"gonum.org/v1/gonum/mat"
+)
 
 /* utility functions */
 
@@ -28,4 +31,33 @@ func transposefloats(vals []float64, dim0, dim1 int) []float64 {
 		}
 	}
 	return ret
+}
+
+// SymCrossProd performs a product between x', a and x,
+//  s = x' * a * x
+func symCrossProd(a mat.Symmetric, x mat.Matrix) *mat.SymDense {
+	if x == nil {
+		panic(mat.ErrZeroLength)
+	}
+	n, m := x.Dims()
+
+	if a != nil {
+		if a.Symmetric() != n {
+			panic(mat.ErrShape)
+		}
+	} else {
+		a = mat.NewDiagDense(n, repeat(1, n))
+	}
+
+	s := mat.NewSymDense(m, nil)
+	xx := mat.DenseCopyOf(x)
+
+	for i := 0; i < n; i++ {
+		for j := 0; j < n; j++ {
+			s.RankTwo(s, a.At(i, j), xx.RowView(i), xx.RowView(j))
+
+		}
+	}
+
+	return s
 }
