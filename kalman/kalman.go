@@ -31,7 +31,7 @@ type Kalman struct {
 	aPP     []*mat.SymDense // updt cov Q
 	mv      *mat.Dense      // pred noise obs (y)
 	mvv     *mat.Dense      // updt noise obs (y)
-	aS      []*mat.Dense
+	aS      []*mat.SymDense
 	aK      []*mat.Dense
 	inix    []float64
 	iniP    []float64
@@ -135,7 +135,7 @@ func (obj *Kalman) Init() error {
 	obj.mv = mat.NewDense(obj.nsample+1, obj.nvar, nil)
 	obj.mvv = mat.NewDense(obj.nsample+1, obj.nvar, nil)
 
-	obj.aS = make([]*mat.Dense, obj.nsample+1)
+	obj.aS = make([]*mat.SymDense, obj.nsample+1)
 	obj.aK = make([]*mat.Dense, obj.nsample+1)
 
 	return nil
@@ -143,25 +143,37 @@ func (obj *Kalman) Init() error {
 
 // Filtering does the Kalman filtering
 func (obj *Kalman) Filtering() error {
-	var v1 = mat.NewVecDense(obj.nlatent, nil)
-	var v2 = mat.NewVecDense(obj.nlatent, nil)
-	var v3 = mat.NewVecDense(obj.nlatent, nil)
+	var v1 = &mat.VecDense{}
+	var v2 = &mat.VecDense{}
+	var v3 = &mat.VecDense{}
 
+	var mz = mat.DenseCopyOf(obj.mz)
 	var mu = mat.DenseCopyOf(obj.mu)
+
 	var mQ = obj.parQ.(*mat.SymDense)
+	var mR = obj.parR.(*mat.SymDense)
 
 	for i := 1; i <= obj.nsample; i++ {
 		// predict
+		v1.Reset()
 		v1.MulVec(obj.parF, obj.mx.RowView(i-1))
+		v2.Reset()
 		v2.MulVec(obj.parB, mu.RowView(i-1))
 		v3.AddVec(v1, v2)
-		// question here
 		obj.mx.SetRow(i, mat.Col(nil, 0, v3))
 
 		obj.aP[i] = mat.NewSymDense(obj.nlatent, nil)
 		obj.aP[i].AddSym(symCrossProd(obj.aPP[i-1], obj.parF.T()), mQ)
 
 		// update
+		v1.Reset()
+		v1.MulVec(obj.parH, v3)
+		v2.Reset()
+		v2.SubVec(mz.RowView(i-1), v1)
+		obj.mv.SetRow(i, mat.Col(nil, 0, v2))
+
+		obj.aS[i] = mat.NewSymDense(obj.nvar, nil)
+		obj.aS[i].AddSym(symCrossProd(obj.aP[i], obj.parH.T()), mR)
 
 	}
 
