@@ -1,6 +1,6 @@
 package filters
 
-import "mults"
+import "github.com/yukai-yang/mults"
 
 /* the common interface */
 
