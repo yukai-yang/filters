@@ -2,7 +2,6 @@ package kalman
 
 import (
 	"errors"
-
 	"github.com/yukai-yang/mults"
 	"gonum.org/v1/gonum/mat"
 )

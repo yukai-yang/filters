@@ -1,6 +1,7 @@
 package kalman
 
 import (
+	"github.com/yukai-yang/filters"
 	"github.com/yukai-yang/mults"
 	"gonum.org/v1/gonum/mat"
 )
@@ -9,7 +10,7 @@ import (
 
 // NewKalman initializes the Kalman filter
 // and returns the address of an object of Kalman struct
-func NewKalman(data *mults.MulTS) *Kalman {
+func NewKalman(data *mults.MulTS) filters.Filter {
 	var kal = &Kalman{}
 	kal.data = data
 	return kal
